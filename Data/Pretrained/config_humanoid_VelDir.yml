@@ -1,0 +1,111 @@
+actor_activation: ELU
+#actor_activation: sigmoid
+actor_gate_hidden_layer_size: 64
+actor_hidden_layer_num: 3
+actor_hidden_layer_size: 512 #1024
+actor_num_experts: 6
+collect_size: 2048 #1024 #512 
+freemusco_batch_size: 512
+freemusco_lr: 1.0e-05 #0.00001
+freemusco_rollout_length: 32 
+freemusco_weight_avel: 0 #not usd
+freemusco_weight_rot: 0 #not used
+freemusco_weight_height: 1.2
+freemusco_weight_pos: 0.2
+freemusco_weight_up_dir: 3
+freemusco_weight_vel: 0.5
+freemusco_weight_kl: 0.1
+freemusco_weight_l1: 0.01
+freemusco_weight_l2: 0.001
+cpu_b: 34
+cpu_e: 44
+encoder_activation: ELU
+encoder_fix_var: 0.3
+encoder_hidden_layer_num: 2
+encoder_hidden_layer_size: 512 
+env_contact_type: 0
+env_err_length: 20
+env_err_threshod: 0.2 
+env_fps: 20 #33
+env_max_length: 512
+env_min_length: 32 
+env_no_balance: false
+env_substep: 6 #15
+evaluate_period: 20
+experiment_name: freemusco
+latent_size: 64
+load: false
+max_iteration: 20001 #20001
+save_period: 100
+seed: 0
+sub_iter: 8
+world_model_activation: ELU
+world_model_batch_size: 512
+world_model_hidden_layer_num: 4 
+world_model_hidden_layer_size: 512 #1024
+world_model_lr: 0.002
+world_model_rollout_length: 8
+world_model_weight_avel: 4
+world_model_weight_pos: 1
+world_model_weight_rot: 1
+world_model_weight_vel: 4
+
+use_mujoco: true
+mujoco_sim_type: muscle #use for mujoco, dartpy
+mujoco_file_name: Fullbody/fullbody
+change_activation: true
+changed_activation_function: tanhrelu #sigmoid #tanh
+use_normalize: false 
+use_rot6d_action: false 
+use_leg_collision: true
+use_hypersphere_z: true
+posterior_input_change_for_trajectory: true #fixed_vel #default
+use_model_change: false #ostrich
+use_fullbody_change: false #chimanoid 
+
+model_change_mode: 'fullbody' 
+model_idx: 0
+#model_change_mode: 'ostrich'
+#model_idx: 1
+
+#fullbody and chimanoid (default) 
+#model_config_num_link: 20
+#model_config_num_muscles: 120
+#model_config_axis_change: false
+#model_config_root_init_height: 0.94
+#model_config_root_link_idx: 1
+#model_config_head_link_idx: 1 #root
+##ostrich (32)
+model_config_file_name: 'Animal/ostrich/ostrich'
+model_config_num_muscles: 120
+model_config_axis_change: true
+model_config_root_init_height: 0.9 #1.05 -> 0.8 ->
+model_config_root_joint_name: 'root_x'
+model_config_num_dofs: 0
+
+use_muscle_state_prediction: true 
+use_muscle_state_energy_prediction: false #same as use_predict_energy + use_predict_mutli_energy (version use_muscle_state_prediction)
+use_muscle_state_energy_prediction_only: true # rigid, energy
+#energy scale (45 -> 4.5 -> 0.45)
+
+without_vae_version_goal: true #set true if using below target or goal (> 0dim)
+without_vae_version_goal_target_vel_rot: false 
+without_vae_version_goal_global_vel_rot: true
+use_goal_transition: false #venv only (during simluation -> sampling)
+use_random_target_vel: true 
+
+#use_policy_without_vae: false 
+use_random_target_for_latent_ver_energy: false #goal vel + pose & goal rot + energy 
+use_random_target_for_latent_ver_double: false #energy + pose (hip, knee)
+ver_double_mk1: false #hip + knee + talus
+ver_double_mk2: false #shoulder + elbow + hip + knee
+ver_double_mk3: false #thorax
+ver_double_mk4: false #single version for ostrich and chimanoid
+mk4_mode: 0 #0hip 1knee 2ankle 
+
+checkpoint_path: 'Data/Pretrained/humanoid_VelDir.data'
+
+
+
+
+

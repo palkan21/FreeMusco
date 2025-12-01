@@ -1,0 +1,6 @@
+*.egg-info
+__pycache__/
+*.py[cod]
+*$py.class
+*.data
+MUJOCO_LOG.TXT
