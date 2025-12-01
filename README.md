@@ -22,8 +22,7 @@ pip install gymnasium pygame
 ```
 
 ## Pretrained Checkpoints
-[Google Drive](https://drive.google.com/drive/folders/1411vveAVjGZREY0TDieMdqhpoUeUpRl2?usp=drive_link) <BR>
-Please download and put data files into directory "Data/Pretrained"
+[Google Drive](https://drive.google.com/drive/folders/1411vveAVjGZREY0TDieMdqhpoUeUpRl2?usp=drive_link) Please download and put data files into directory "Data/Pretrained"
 
 ## How to run (Inference)
 ```bash
@@ -34,9 +33,12 @@ Corresponding checkpoint will be automatically loaded (First, you need to put da
 
 ## Keyboard Shortcut (Inference)
 Press **`R`** for reset, **`Space`** for pause/start, **`U`** for render muscle activation. <BR> 
-Press **`Q`**, **`E`**, **`W`** for velocity and direction change (**`Q`** is slow, **`E`** is middle, **`W`** is high velocity). <BR>  
+Press **`Q`**, **`E`**, **`W`** for velocity and direction change (**`Q`** is low, **`E`** is medium, **`W`** is high velocity). <BR> 
+
 Press **`O`** for energy decreasing and **`L`** for energy increasing (VelEnergyPose config). <BR> 
 Press **`B`** for identity target pose, **`N`** for random target pose (VelEnergyPose config). <BR> 
+
+Press **`V`** for change latent sampling method (goal-state-conditioned latent from posterior or state-conditioned latent from prior) <BR> 
 
 ## How to run (train)
 ```bash
