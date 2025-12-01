@@ -203,6 +203,7 @@ class Playground(FreeMusco):
 
         return args
 
+mode_prior = False
 
 class MotionFreePlayground(Playground):
     def get_action(self, **obs_info):
@@ -220,8 +221,10 @@ class MotionFreePlayground(Playground):
             # latent, mu, logvar = self.encoder.encode_post(n_observation, n_target)
             latent_code, mu_post, mu_prior = self.encode(n_observation, n_target) #here
 
+        global mode_prior
         #random_sample
-        if(False): #250217 #inference prior
+        if(mode_prior == True): #250217 #inference prior
+            print('z is randomly sampled from latent space: prior')
             latent_code, mu_prior, logvar = self.encoder.encode_prior(n_observation)
             mu_post = mu_prior 
             mu_post = latent_code
@@ -249,7 +252,8 @@ need_energyUp = False
 need_energyDown = False
 need_poseOrigin = False #B
 need_poseRandom = False #N
-need_poseThird = False #V
+
+need_prior_posterior = False #V
 
 import numpy as np
 
@@ -441,8 +445,8 @@ if __name__ == '__main__':
                 #print(xxx)
 
             elif chr(keycode) == 'v' or chr(keycode) == 'V':
-                global need_poseThird
-                need_poseThird = True
+                global need_prior_posterior
+                need_prior_posterior = True
                 #print(xxx
 
         start_root = np.zeros(3)
@@ -584,7 +588,7 @@ if __name__ == '__main__':
                                 playground.env.global_velocity_side = np.random.uniform(-2.5, 2.5)
                             print('change')
 
-                    if(need_energyUp == True or need_energyDown == True or need_poseOrigin == True or need_poseRandom == True or need_poseThird == True):
+                    if(need_energyUp == True or need_energyDown == True or need_poseOrigin == True or need_poseRandom == True):
                         if(need_energyUp == True):
                             playground.env.target_energy = playground.env.target_energy + 0.005 #0.01
                             #playground.env.target_height = playground.env.target_height + 0.05
@@ -622,10 +626,11 @@ if __name__ == '__main__':
                                 #playground.env.get_target_energy_height_pose(-1)
                                 need_poseRandom = False
 
-                            if(need_poseThird == True):
-                                playground.env.get_target_energy_height_pose(10)
-                                #playground.env.get_target_energy_height_pose(-1)
-                                need_poseThird = False
+                    if(need_prior_posterior == True):
+                        #global mode_prior
+                        mode_prior = not mode_prior
+                        need_prior_posterior = False
+
                     
                     #print(obs['state'][1][1], obs['state'][10][1], obs['state'][11][1]) #root, thorax1, thorax2
 
