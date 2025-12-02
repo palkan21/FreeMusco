@@ -3,9 +3,10 @@ Official implementation of SIGGRAPH Asia 2025 Conference Paper: <BR>
 FreeMusco: Motion-Free Learning of Latent Control for Morphology-Adaptive Locomotion in Musculoskeletal Characters <BR>
 
 Authors: [Minkwan Kim](https://cgrhyu.github.io/people/minkwan-kim.html) and [Yoonsang Lee](https://cgrhyu.github.io/people/yoonsang-lee.html) (Hanyang University, Computer Grahpics and Robotics Lab) <BR>
-Overview, demo results, video and paper can be found on [Paper website](https://cgrhyu.github.io/publications/2025-freemusco.html)
+[Paper website](https://cgrhyu.github.io/publications/2025-freemusco.html): Including demo results, overview, video and paper.
 
-This code is developed based on open-source structure of [Control-VAE](https://github.com/heyuanYao-pku/Control-VAE) <BR>
+This code is developed based on open-source structure of [Control-VAE](https://github.com/heyuanYao-pku/Control-VAE) (BSD 3-Clause License) <BR>
+
 Tested on Ubuntu 20.04, 22.04, and 24.04; issues may still occur depending on hardware or GPU.
 
 ## How to install
@@ -29,7 +30,8 @@ pip install gymnasium pygame
 python3 Run/playground.py #please run in base directory
 ```
 Please select config files that you want to render. (in the directory "Data/Pretrained") <BR>
-Corresponding checkpoint will be automatically loaded (First, you need to put data files into the directory "Data/Pretrained")
+Corresponding checkpoint will be automatically loaded <BR>
+(First, you need to put data files into the directory "Data/Pretrained")
 
 ## Keyboard Shortcut (Inference)
 Press **`R`** for reset, **`Space`** for pause/start, **`U`** for render muscle activation. <BR> 
@@ -49,20 +51,4 @@ Train code will be updated soon.
 ## Citation
 Citation information for our paper will be updated soon.
 
-## Acknowledgement
-This code is developed based on open-source structure of [Control-VAE](https://github.com/heyuanYao-pku/Control-VAE) <BR>
-If you find that Conditional-Vae and Model-based RL system is helpful, please consider citing below: <BR>
-```bash
-@article{
-    ControlVAE,
-    author = {Yao, Heyuan and Song, Zhenhua and Chen, Baoquan and Liu, Libin},
-    title = {ControlVAE: Model-Based Learning of Generative Controllers for Physics-Based Characters},
-    year = {2022},
-    issue_date = {December 2022},
-    volume = {41},
-    number = {6},
-    url = {https://doi.org/10.1145/3550454.3555434},
-    journal = {ACM Trans. Graph.},
-    articleno = {183},
-}
-```
+
