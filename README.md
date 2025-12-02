@@ -33,7 +33,7 @@ Corresponding checkpoint will be automatically loaded (First, you need to put da
 
 ## Keyboard Shortcut (Inference)
 Press **`R`** for reset, **`Space`** for pause/start, **`U`** for render muscle activation. <BR> 
-Press **`Q`**, **`E`**, **`W`** for velocity and direction change (**`Q`** is low, **`E`** is medium, **`W`** is high velocity). <BR> 
+Press **`Q`**, **`Z`**, **`E`** for velocity and direction change (**`Q`** is low, **`Z`** is medium, **`E`** is high velocity). <BR> 
 
 Press **`O`** for energy decreasing and **`L`** for energy increasing (VelEnergyPose config). <BR> 
 Press **`B`** for identity target pose, **`N`** for random target pose (VelEnergyPose config). <BR> 
