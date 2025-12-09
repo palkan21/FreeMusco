@@ -1,6 +1,6 @@
 # FreeMusco: Motion-Free Learning of Latent Control for Morphology-Adaptive Locomotion in Musculoskeletal Characters
 Official implementation of SIGGRAPH Asia 2025 Conference Paper: <BR>
-FreeMusco: Motion-Free Learning of Latent Control for Morphology-Adaptive Locomotion in Musculoskeletal Characters <BR>
+[FreeMusco: Motion-Free Learning of Latent Control for Morphology-Adaptive Locomotion in Musculoskeletal Characters](https://dl.acm.org/doi/10.1145/3757377.3764002) <BR>
 
 Authors: [Minkwan Kim](https://cgrhyu.github.io/people/minkwan-kim.html) and [Yoonsang Lee](https://cgrhyu.github.io/people/yoonsang-lee.html) (Hanyang University, Computer Grahpics and Robotics Lab) <BR>
 [Paper website](https://cgrhyu.github.io/publications/2025-freemusco.html): Including demo results, overview, video and paper.
@@ -11,9 +11,9 @@ Tested on Ubuntu 20.04, 22.04, and 24.04; issues may still occur depending on ha
 
 ## How to install
 ```bash
+#cd FreeMusco
 conda env create -f freemusco.yml
 conda activate freemusco
-#cd FreeMusco
 conda install pytorch=*=*cuda* torchvision torchaudio cudatoolkit=11.3 -c pytorch
 conda install mpi4py
 
@@ -27,7 +27,7 @@ pip install gymnasium pygame
 
 ## How to run (Inference)
 ```bash
-python3 Run/playground.py #please run in base directory
+python3 Run/playground.py #please run in base directory (FreeMusco)
 ```
 Please select config files that you want to render. (in the directory "Data/Pretrained") <BR>
 Corresponding checkpoint will be automatically loaded <BR>
@@ -44,11 +44,25 @@ Press **`V`** for change latent sampling method (goal-state-conditioned latent f
 
 ## How to run (train)
 ```bash
-python3 Run/train.py #please run in base directory
+python3 Run/train.py #please run in base directory (FreeMusco)
 ```
 Train code will be updated soon.
 
 ## Citation
-Citation information for our paper will be updated soon.
-
-
+```text
+@inproceedings{10.1145/3757377.3764002,
+author = {Kim, Minkwan and Lee, Yoonsang},
+title = {FreeMusco: Motion-Free Learning of Latent Control for Morphology-Adaptive Locomotion in Musculoskeletal Characters},
+year = {2025},
+isbn = {9798400721373},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3757377.3764002},
+doi = {10.1145/3757377.3764002},
+booktitle = {Proceedings of the SIGGRAPH Asia 2025 Conference Papers},
+articleno = {38},
+numpages = {11},
+keywords = {Motion-free Learning, Morphology-Adaptive Locomotion, Musculoskeletal Character Control, Temporally Averaged Loss Formulation, Model-based Reinforcement Learning, Conditional Variational Autoencoder},
+series = {SA Conference Papers '25}
+}
+```
