@@ -5,6 +5,8 @@ Official implementation of SIGGRAPH Asia 2025 Conference Paper: <BR>
 Authors: [Minkwan Kim](https://cgrhyu.github.io/people/minkwan-kim.html) and [Yoonsang Lee](https://cgrhyu.github.io/people/yoonsang-lee.html) (Hanyang University, Computer Grahpics and Robotics Lab) <BR>
 [Paper website](https://cgrhyu.github.io/publications/2025-freemusco.html): Including demo results, overview, video and paper.
 
+![FreeMusco-teaser-web](assets/FreeMusco-teaser-web.jpg)
+
 This code is developed based on open-source structure of [Control-VAE](https://github.com/heyuanYao-pku/Control-VAE) (BSD 3-Clause License) <BR>
 
 Tested on Ubuntu 20.04, 22.04, and 24.04; issues may still occur depending on hardware or GPU.
@@ -42,11 +44,11 @@ Press **`B`** for identity target pose, **`N`** for random target pose (VelEnerg
 
 Press **`V`** for change latent sampling method (goal-state-conditioned latent from posterior or state-conditioned latent from prior) <BR> 
 
-## How to run (train)
+## How to run (Train)
 ```bash
 python3 Run/train.py #please run in base directory (FreeMusco)
 ```
-Train code will be updated soon.
+Currently, we only offer inference code. Train code will be updated soon.
 
 ## Citation
 ```text
