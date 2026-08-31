@@ -46,9 +46,9 @@ Press **`V`** for change latent sampling method (goal-state-conditioned latent f
 
 ## How to run (Train)
 ```bash
-python3 Run/train.py #please run in base directory (FreeMusco)
+mpirun -np 6 python3 Run/train.py #please run in base directory (FreeMusco)
 ```
-Currently, we only offer inference code. Train code will be updated soon.
+Currently, we only offer train code for humanoid velocity control. Other option will be released soon.
 
 ## Citation
 ```text
