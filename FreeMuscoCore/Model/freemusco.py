@@ -209,11 +209,15 @@ class FreeMusco(nn.Module):
         self.world_model_batch_size = kargs['world_model_batch_size']
         self.freemusco_batch_size = kargs['freemusco_batch_size']
         
-        # policy training weights                                    
+        # policy training weights
         self.weight = {}
         for key,value in kargs.items():
             if 'freemusco_weight' in key:
                 self.weight[key.replace('freemusco_weight_','')] = value
+
+        # locomotion-loss target root height (per character/config; humanoid 0.8;
+        # chimanoid / ostrich ship as 0.0 -- their tuned values are not part of this release)
+        self.loss_target_height = kargs.get('loss_target_height', 0.8)
         
         # for real trajectory collection
         self.runner = TrajectorCollector(venv = env, actor = self, runner_with_noise = True,
@@ -358,7 +362,8 @@ class FreeMusco(nn.Module):
         """training loop, MPI included
         """
 
-        self.weight['avel'] = 0.2
+        # note: the locomotion objective hard-zeros the rot & avel terms, so weight['rot'] and
+        # weight['avel'] are unused (they stay in the config for logging / back-compat only).
         self.current_train_iteration = 0
 
         for i in range(self.max_iteration):
@@ -598,10 +603,147 @@ class FreeMusco(nn.Module):
         return data
     #--------------------------------Training submodule-------------------------------#
     
-    def train_policy(self, states, targets, additional=None): #additional == future #additional2
-        #will be updated
-        #locomotion_utils.locomotion_objective()
-        res = None
+    def forward_direction_loss(self, state, target):
+        '''
+            Heading tracking: align the root forward axis (derived from the root quaternion)
+            with the goal direction built from the 2d goal velocity. The axis layout is chosen
+            by model_idx (humanoid/chimanoid vs ostrich). Returns a scalar added to acs_loss.
+        '''
+        import torch.nn.functional as F
+        t0 = target[:, 0]
+        zero = torch.zeros_like(t0)
+        if(self.model_idx == 1): #ostrich
+            rot_target = torch.stack([t0, target[:, 1], zero], dim=-1)
+        else: #humanoid / chimanoid
+            rot_target = torch.stack([t0, zero, target[:, 1]], dim=-1)
+        rot_target = F.normalize(rot_target, dim=1)
+
+        qx, qy, qz, qw = state[:, 0, 3], state[:, 0, 4], state[:, 0, 5], state[:, 0, 6]
+        r0 = 1 - 2 * (qy * qy + qz * qz)
+        if(self.model_idx == 1): #ostrich
+            rot_current = torch.stack([r0, 2 * (qx * qy + qw * qz), torch.zeros_like(r0)], dim=-1)
+        else: #humanoid / chimanoid
+            rot_current = torch.stack([r0, torch.zeros_like(r0), 2 * (qx * qz - qw * qy)], dim=-1)
+        rot_current = F.normalize(rot_current, dim=1)
+
+        forward_loss = torch.mean(torch.abs(rot_target - rot_current))
+        # per-character scale. Only the humanoid value is released; chimanoid / ostrich are zeroed
+        # out until their weights are finalised (see the loss notes), which disables this term.
+        if(self.model_idx == 1): #ostrich
+            rot_scale = 0.
+        elif(self.use_fullbody_change == True): #chimanoid
+            rot_scale = 0.
+        else: #humanoid
+            rot_scale = 1.0
+        return 0.5 * forward_loss * 3 * 2 * 2. * rot_scale
+
+    def train_policy(self, states, targets, additional=None): #additional == muscle_state
+        '''
+            Model-based update of the policy (encoder + decoder). Starting from the first
+            buffered state we imagine a full rollout through the world model (used
+            differentiably, but NOT updated here) and optimise:
+              - 'acs' : a per-step muscle-energy minimisation term,
+              - 'kl'  : KL(posterior || learnable prior), annealed by the beta scheduler,
+              - a sparse locomotion objective evaluated on the mean observation of the rollout.
+            Per-step and end terms are combined with an exponentially-decayed average over the
+            rollout; only self.vae_optimizer (encoder + agent) is stepped.
+        '''
+        rollout_length = states.shape[1]
+
+        states = states.transpose(0,1).contiguous().to(ptu.device)   #(T, B, num_link, 13)
+        targets = targets.transpose(0,1).contiguous().to(ptu.device) #(T, B, target_dim)
+        if(self.use_muscle_state_prediction == True):
+            additional = additional.transpose(0,1).contiguous().to(ptu.device) #(T, B, muscle_dim)
+
+        cur_state = states[0]
+        cur_muscle_state = additional[0] if self.use_muscle_state_prediction == True else None
+
+        cur_observation = state2ob(cur_state, self.model_idx)
+        n_observation = self.normalize_obs(cur_observation)
+
+        state_mean = torch.zeros_like(cur_observation) #accumulate imagined observations
+        acs_list = []
+        kl_list = []
+
+        for i in range(rollout_length):
+            target = targets[i]
+            n_target = self.normalize_obs(target)
+
+            # encode (posterior) -> latent -> decode to action (muscle activations)
+            latent_code, mu_post, mu_prior = self.encode(n_observation, n_target)
+            info = {"mu_prior": mu_prior, "mu_post": mu_post}
+            action = self.decode(n_observation, latent_code)
+            action = action + torch.randn_like(action) * self.action_sigma
+
+            # imagine one step through the world model
+            cur_state, cur_muscle_state, cur_energy_state, cur_contact_state = \
+                self.world_model(cur_state, cur_muscle_state, action)
+
+            cur_observation = state2ob(cur_state, self.model_idx)
+            n_observation = self.normalize_obs(cur_observation)
+
+            state_mean = state_mean + cur_observation
+
+            # per-step muscle-energy minimisation
+            energy = cur_energy_state
+            energy_loss = self.weight['l2'] * torch.mean(torch.sum(energy**2, dim=-1)) \
+                        + self.weight['l1'] * torch.mean(torch.norm(energy, p=1, dim=-1))
+            acs_loss = energy_loss * 50 * 0.3 * 0.5 * 1 * 2
+
+            # heading-direction tracking (all characters)
+            acs_loss = acs_loss + self.forward_direction_loss(cur_state, target)
+
+            # upper-body (thorax) uprightness — humanoid only;
+            # chimanoid (use_fullbody_change) and ostrich (model_idx 1) auto-skip
+            if(self.model_idx == 0 and self.use_fullbody_change == False):
+                thorax_rot = cur_observation[:, 126:132]
+                thorax_target = torch.zeros_like(thorax_rot)
+                thorax_target[:, 0] = 1.0
+                thorax_target[:, 3] = 1.0
+                thorax_loss = torch.mean(torch.norm(thorax_rot - thorax_target, p=1, dim=-1))
+                acs_loss = acs_loss + thorax_loss * 0.5
+
+            # per-step KL(posterior || learnable prior)
+            kl_loss = torch.mean(torch.sum(self.encoder.kl_loss(**info), dim=-1))
+
+            acs_list.append(acs_loss)
+            kl_list.append(kl_loss * self.beta_scheduler.value)
+
+        # exponentially-decayed mean over the rollout
+        acs_value = sum((0.95**i) * acs_list[i] for i in range(rollout_length)) / rollout_length
+        kl_value  = sum((0.95**i) * kl_list[i]  for i in range(rollout_length)) / rollout_length
+
+        # sparse locomotion objective on the mean observation of the imagined rollout
+        mean_observation = state_mean / rollout_length
+        if(self.model_idx == 1): #ostrich
+            loss_tmp = locomotion_objective_ostrich(mean_observation, target, self.weight,
+                                dt=self.env.dt, target_height=self.loss_target_height)
+        elif(self.use_fullbody_change == True): #chimanoid
+            loss_tmp = locomotion_objective_chimanoid(mean_observation, target, self.weight,
+                                dt=self.env.dt, target_height=self.loss_target_height)
+        else: #humanoid
+            loss_tmp = locomotion_objective(mean_observation, target, self.weight,
+                                dt=self.env.dt, target_height=self.loss_target_height)
+
+        loss = acs_value + kl_value + sum(loss_tmp) * 0.35
+
+        self.vae_optimizer.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.encoder.parameters(), 1, error_if_nonfinite=True)
+        torch.nn.utils.clip_grad_norm_(self.agent.parameters(), 1, error_if_nonfinite=True)
+        self.vae_optimizer.step()
+        self.beta_scheduler.step()
+
+        res = {
+            'pos': loss_tmp[0],
+            'vel': loss_tmp[2],
+            'height': loss_tmp[4],
+            'up_dir': loss_tmp[5],
+            'acs': acs_value,
+            'kl': kl_value,
+            'beta': self.beta_scheduler.value,
+            'loss': loss,
+        }
         return res
 
     def train_world_model(self, states, actions, additional=None, additional2=None, additional3=None): #additional == energy # or muscle_state

@@ -180,13 +180,77 @@ def decompose_obs(obs):
     return pos, rot, vel, avel, height, up_dir
 
 #---------------------------Loss Utils (Locomotion Objective Loss) --------------------------------------------#
-@torch.jit.script
-def locomotion_objective(obs, target, weight:typing.Dict[str, float], dt:float = 1/20, additional=None):
-    return 0, 0, 0, 0, 0, 0
-    #will be updated
+# NOTE: jit.script is disabled here for the same reason as state2ob / decompose_obs above
+# (variable indexing + heterogeneous return tuple do not script cleanly). Plain python is fine:
+# these are only called from FreeMusco.train_policy, never inside the simulation hot loop.
+def _locomotion_core(obs, target, weight:typing.Dict[str, float], dt:float,
+                     up_axis:int, target_height:float, pose_scale:float, vel_mult:float):
+    '''
+        Shared velocity-tracking objective for every config_vel character.
 
-@torch.jit.script
-def locomotion_objective_ostrich(obs, target, weight:typing.Dict[str, float], dt:float = 1/20, additional=None):
-    return 0, 0, 0, 0, 0, 0
-    #will be updated
+        obs/target are (batch, obs_dim) with obs = state2ob(state). All offsets are derived
+        from num_link, so the same body serves humanoid/chimanoid (20 links, Y-up) and ostrich
+        (32 links, Z-up); the per-character constants arrive as arguments. Returns 6 terms
+        (pos, rot, vel, avel, height, up_dir); rot and avel are unused for locomotion (0).
+
+        Only the humanoid constants are released; chimanoid / ostrich pass zeros (see below).
+    '''
+    num_link = (obs.shape[-1] - 3) // 16
+    h_i = 15 * num_link   # per-link height block start (root height = first entry)
+    v_i = 9 * num_link    # linear-velocity block start (root vel = first 3 entries)
+    u_i = 16 * num_link   # global up-direction (final 3 dims)
+
+    # goal velocity: forward (x) tracked to the 2d goal magnitude, lateral (y/z) tracked to 0
+    target_vel = torch.sqrt(target[:, 0] * target[:, 0] + target[:, 1] * target[:, 1])
+    delta_vel = torch.cat([(obs[:, v_i] - target_vel).unsqueeze(-1), obs[:, v_i + 1:v_i + 3]], dim=-1)
+
+    # height: only penalise dropping below target_height (staying tall is free)
+    delta_height = (obs[:, h_i] - target_height).unsqueeze(-1)
+    delta_height = torch.where(delta_height > 0, torch.zeros_like(delta_height), delta_height)
+
+    # up direction: keep the root up-axis aligned with gravity-up (one-hot target at up_axis)
+    up_target = torch.zeros_like(obs[:, u_i:u_i + 3])
+    up_target[:, up_axis] = 1.0
+    delta_up_dir = obs[:, u_i:u_i + 3] - up_target
+
+    # pose regularisation: joint rotations towards the identity (T-pose), root excluded
+    identity6d = torch.zeros((num_link, 6), device=obs.device, dtype=obs.dtype)
+    identity6d[:, 0] = 1.0
+    identity6d[:, 3] = 1.0
+    delta_pose = (obs[:, 3 * num_link:9 * num_link] - identity6d.reshape(-1))[:, 6:] * pose_scale
+
+    pos_loss    = weight['pos']        * torch.mean(torch.norm(delta_pose,    p=1, dim=-1))
+    vel_loss    = weight['vel']    * 60 * torch.mean(torch.norm(delta_vel,    p=1, dim=-1)) * vel_mult
+    height_loss = weight['height'] * 20 * torch.mean(torch.norm(delta_height, p=1, dim=-1))
+    up_dir_loss = weight['up_dir']     * torch.mean(torch.norm(delta_up_dir,  p=1, dim=-1))
+
+    return pos_loss, 0., dt * vel_loss, 0., height_loss, up_dir_loss
+
+
+def locomotion_objective(obs, target, weight:typing.Dict[str, float], dt:float = 1/20,
+                         target_height:float = 0.8, additional=None):
+    # humanoid (fullbody): 20 links, Y-up (axis 1)
+    return _locomotion_core(obs, target, weight, dt,
+                            up_axis=1, target_height=target_height, pose_scale=0.2, vel_mult=2.)
+
+
+def locomotion_objective_chimanoid(obs, target, weight:typing.Dict[str, float], dt:float = 1/20,
+                                   target_height:float = 0., additional=None):
+    print('To Do: chimanoid: 20 links, Y-up (axis 1). Shares the humanoid body layout but was trained with its '
+          'own hand-tuned constants, which are NOT part of this release -- they are zeroed out here, so '
+          'this objective contributes nothing and chimanoid training will not reproduce the paper result. '
+          'restore pose_scale / vel_mult / target_height once the chimanoid weights are finalised.')
+    print(xxx)
+    return _locomotion_core(obs, target, weight, dt,
+                            up_axis=1, target_height=target_height, pose_scale=0., vel_mult=0.)
+
+
+def locomotion_objective_ostrich(obs, target, weight:typing.Dict[str, float], dt:float = 1/20,
+                                 target_height:float = 0., additional=None):
+    print('To Do: ostrich: 32 links, Z-up (axis 2). Same as above -- the ostrich-specific constants are not '
+          'part of this release and are zeroed out; only the (structural) up-axis is kept. '
+          'restore pose_scale / vel_mult / target_height once the ostrich weights are finalised.')
+    print(xxx)
+    return _locomotion_core(obs, target, weight, dt,
+                            up_axis=2, target_height=target_height, pose_scale=0., vel_mult=0.)
 

@@ -17,6 +17,7 @@ freemusco_weight_vel: 0.5
 freemusco_weight_kl: 0.1
 freemusco_weight_l1: 0.01
 freemusco_weight_l2: 0.001
+loss_target_height: 0.0 #chimanoid weights are not part of this release (zeroed; see locomotion_utils.locomotion_objective_chimanoid)
 cpu_b: 34
 cpu_e: 44
 encoder_activation: ELU
@@ -69,19 +70,19 @@ model_idx: 0
 #model_idx: 1
 
 #fullbody and chimanoid (default) 
-#model_config_num_link: 20
-#model_config_num_muscles: 120
-#model_config_axis_change: false
-#model_config_root_init_height: 0.94
-#model_config_root_link_idx: 1
-#model_config_head_link_idx: 1 #root
-##ostrich (32)
-model_config_file_name: 'Animal/ostrich/ostrich'
+model_config_num_link: 20
 model_config_num_muscles: 120
-model_config_axis_change: true
-model_config_root_init_height: 0.9 #1.05 -> 0.8 ->
-model_config_root_joint_name: 'root_x'
-model_config_num_dofs: 0
+model_config_axis_change: false
+model_config_root_init_height: 0.8 #0.94
+model_config_root_link_idx: 1
+model_config_head_link_idx: 1 #root
+##ostrich (32)
+#model_config_file_name: 'Animal/ostrich/ostrich'
+#model_config_num_muscles: 120
+#model_config_axis_change: true
+#model_config_root_init_height: 0.9 #1.05 -> 0.8 ->
+#model_config_root_joint_name: 'root_x'
+#model_config_num_dofs: 0
 
 use_muscle_state_prediction: true 
 use_muscle_state_energy_prediction: false #same as use_predict_energy + use_predict_mutli_energy (version use_muscle_state_prediction)
@@ -104,6 +105,7 @@ ver_double_mk4: false #single version for ostrich and chimanoid
 mk4_mode: 0 #0hip 1knee 2ankle 
 
 checkpoint_path: 'Data/Pretrained/chimanoid_Vel.data'
+#checkpoint_path: 'Data/10000.data'
 
 
 

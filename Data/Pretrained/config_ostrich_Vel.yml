@@ -17,6 +17,7 @@ freemusco_weight_vel: 0.5
 freemusco_weight_kl: 0.1
 freemusco_weight_l1: 0.01
 freemusco_weight_l2: 0.001
+loss_target_height: 0.0 #ostrich weights are not part of this release (zeroed; see locomotion_utils.locomotion_objective_ostrich)
 cpu_b: 34
 cpu_e: 44
 encoder_activation: ELU
@@ -104,6 +105,7 @@ ver_double_mk4: false #single version for ostrich and chimanoid
 mk4_mode: 0 #0hip 1knee 2ankle 
 
 checkpoint_path: 'Data/Pretrained/ostrich_Vel.data'
+#checkpoint_path: 'Data/10000.data'
 
 
 

@@ -59,14 +59,19 @@ def build_arg(parser = None):
         parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default = 'panda', type = str)
     parser.add_argument('--show', default = False, action='store_true')
+    parser.add_argument('--config', default = 'Data/Pretrained/config_humanoid_Vel.yml', type = str,
+                        help = 'path to the training config yaml, e.g. Data/Pretrained/config_ostrich_Vel.yml')
 
     parser = MujocoMuscleEnv.add_specific_args(parser)
     parser = FreeMusco.add_specific_args(parser)
     args = vars(parser.parse_args())
     ptu.init_gpu(True)
 
-    config = load_yaml(path ='Data/Pretrained/config.yml')
+    config = load_yaml(path = args['config'])
     args.update(config)
+
+    #the config is shared with inference, where goal transition must stay off. during training we always enable it (goal resampling while simulating).
+    args['use_goal_transition'] = True
 
     return args
 

@@ -4,3 +4,7 @@ __pycache__/
 *$py.class
 *.data
 MUJOCO_LOG.TXT
+
+Data/Muscle/Fullbody/chimanoid_re.xml
+REFACTOR_NOTES.md
+Web/
